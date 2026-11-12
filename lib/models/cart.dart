@@ -70,6 +70,7 @@ class CartState {
     this.checkoutStatus = CheckoutStatus.idle,
     this.orderId,
     this.checkoutError,
+    this.canUndo = false,
   });
 
   final List<CartLine> lines;
@@ -78,6 +79,7 @@ class CartState {
   final CheckoutStatus checkoutStatus;
   final String? orderId;
   final String? checkoutError;
+  final bool canUndo;
 
   int get itemCount => lines.itemCount;
   double get subtotal => lines.subtotal;
@@ -93,7 +95,8 @@ class CartState {
         couponError == other.couponError &&
         checkoutStatus == other.checkoutStatus &&
         orderId == other.orderId &&
-        checkoutError == other.checkoutError;
+        checkoutError == other.checkoutError &&
+        canUndo == other.canUndo;
   }
 
   @override
@@ -104,6 +107,7 @@ class CartState {
     checkoutStatus,
     orderId,
     checkoutError,
+    canUndo,
   );
 
   CartState copyWith({
@@ -113,6 +117,7 @@ class CartState {
     CheckoutStatus? checkoutStatus,
     Object? orderId = _unset,
     Object? checkoutError = _unset,
+    bool? canUndo,
   }) {
     return CartState(
       lines: lines ?? this.lines,
@@ -125,6 +130,7 @@ class CartState {
       checkoutError: identical(checkoutError, _unset)
           ? this.checkoutError
           : checkoutError as String?,
+      canUndo: canUndo ?? this.canUndo,
     );
   }
 }

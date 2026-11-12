@@ -44,3 +44,30 @@ The notifier is not a widget, and there is no BuildContext or setState after the
 
 What happens to history when the page is popped?
 cartProvider is autoDispose. When the page closes, its listeners go away and the provider is disposed. _history lives on CartNotifier, so it is destroyed too. Reopening starts fresh. In the tests I keep a listener open so the provider is not disposed mid-test.
+
+Part 4 notes
+
+What breaks if BlocProvider is inside CartBody?
+CartBody would be tied to Cubit and could no longer be shared by the four versions. The summary, Undo button and listener are outside it, so they could not find the cubit because the provider is below them.
+
+Riverpod equivalents:
+BlocProvider -> a provider plus ProviderScope.
+BlocBuilder -> ConsumerWidget or Consumer with ref.watch.
+BlocListener -> ref.listen.
+context.read -> ref.read.
+buildWhen -> ref.watch(provider.select(...)).
+
+What happens when the same coupon is applied twice?
+The second state is equal to the first (CartState has == and hashCode), so it is skipped. There is no onChange print and no rebuild.
+
+Why does the Cubit summary rebuild less?
+Its BlocBuilder uses buildWhen on item count, subtotal, discount, total and status. Typing or a coupon error does not change those, so it skips.
+
+What does emit do after close()?
+It throws. The isClosed guard after the await stops that.
+
+Why can't the Undo button use cubit.canUndo?
+A getter on the cubit is not part of the emitted state, so BlocBuilder and BlocSelector never see it change. I put canUndo in CartState and select it.
+
+What happens to the cubit and history when the page is popped?
+BlocProvider closes the cubit, so its _history is gone. Reopening starts a fresh cart.
