@@ -71,6 +71,7 @@ class CartState {
     this.orderId,
     this.checkoutError,
     this.canUndo = false,
+    this.history = const [],
   });
 
   final List<CartLine> lines;
@@ -80,6 +81,10 @@ class CartState {
   final String? orderId;
   final String? checkoutError;
   final bool canUndo;
+
+  /// Undo snapshots. Left out of == and hashCode because canUndo is what the
+  /// UI watches.
+  final List<CartState> history;
 
   int get itemCount => lines.itemCount;
   double get subtotal => lines.subtotal;
@@ -118,6 +123,7 @@ class CartState {
     Object? orderId = _unset,
     Object? checkoutError = _unset,
     bool? canUndo,
+    List<CartState>? history,
   }) {
     return CartState(
       lines: lines ?? this.lines,
@@ -131,6 +137,7 @@ class CartState {
           ? this.checkoutError
           : checkoutError as String?,
       canUndo: canUndo ?? this.canUndo,
+      history: history ?? this.history,
     );
   }
 }

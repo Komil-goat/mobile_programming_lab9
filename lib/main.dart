@@ -1,12 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'bloc/cart_page_bloc.dart';
 import 'cubit/cart_page_cubit.dart';
+import 'models/cart.dart';
 import 'riverpod/cart_page_riverpod.dart';
 import 'setstate/cart_page_setstate.dart';
 
+class LabBlocObserver extends BlocObserver {
+  @override
+  void onTransition(Bloc bloc, Transition transition) {
+    super.onTransition(bloc, transition);
+    final next = transition.nextState;
+    if (next is CartState) {
+      debugPrint(
+        '${bloc.runtimeType}: ${transition.event.runtimeType} -> '
+        '${next.checkoutStatus}, total ${next.total}',
+      );
+    }
+  }
+}
+
 void main() {
+  Bloc.observer = LabBlocObserver();
   runApp(const ProviderScope(child: CartFourWaysApp()));
 }
 

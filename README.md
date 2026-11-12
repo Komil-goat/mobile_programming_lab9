@@ -71,3 +71,53 @@ A getter on the cubit is not part of the emitted state, so BlocBuilder and BlocS
 
 What happens to the cubit and history when the page is popped?
 BlocProvider closes the cubit, so its _history is gone. Reopening starts a fresh cart.
+
+Part 5 notes
+
+Where is the undo history?
+It is a history list on CartState, not a field on the bloc. The Undo button selects canUndo from the state. I left history out of == because canUndo is the part the UI watches.
+
+Which events are undoable?
+Only cart edits: added, removed, qty changed and coupon applied. Checkout status changes and undo itself are not saved. A successful checkout clears the cart, so it saves one snapshot for that clear.
+
+What does the transition log add?
+It prints the event that caused the change. Cubit's onChange only shows the old and new state, so it does not say what the user did.
+
+When is the event layer worth it?
+It is better for checkout: droppable() drops extra taps and the log shows which event ran. It is overhead for simple add, remove or quantity changes, where Cubit methods are shorter.
+
+Which style can drop duplicate taps declaratively?
+Bloc, with transformer: droppable(). Riverpod and Cubit need a manual guard like if (status == submitting) return; setState needs the same guard or a disabled button.
+
+What happens with three quick checkout taps?
+Bloc runs the first and drops the rest. Cubit would run the first and its status guard would make the other calls return. After the await, the bloc checks emit.isDone before emitting again.
+
+Final checkpoint
+
+Where state lives and when it dies:
+setState: in the page State, gone when the page is popped.
+Riverpod: in the container, gone when autoDispose has no listeners.
+Cubit: in the cubit owned by BlocProvider, gone when the page is popped.
+Bloc: in the bloc owned by BlocProvider, gone when the page is popped.
+
+Public mutation API:
+Riverpod: set state on the Notifier.
+Cubit: methods that call emit.
+Bloc: add(event).
+setState has none; the page just calls setState.
+
+Mapping:
+ref.watch -> BlocBuilder
+ref.read -> context.read
+ref.listen -> BlocListener
+setState is its own thing: it marks the widget dirty and rebuilds it.
+
+Why skip equal states:
+They avoid rebuilds when nothing changed. CartState needs == and hashCode, and the lines need value equality too.
+
+Guards after the checkout await:
+setState: if (!mounted) return;
+Riverpod: none.
+Cubit: if (isClosed) return;
+Bloc: if (emit.isDone) return;
+They differ because each style owns state in a different place.
