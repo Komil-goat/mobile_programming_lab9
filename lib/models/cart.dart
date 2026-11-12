@@ -18,6 +18,13 @@ class CartLine {
   double get subtotal => product.price * qty;
   CartLine copyWith({int? qty}) =>
       CartLine(product: product, qty: qty ?? this.qty);
+
+  @override
+  bool operator ==(Object other) =>
+      other is CartLine && other.product.id == product.id && other.qty == qty;
+
+  @override
+  int get hashCode => Object.hash(product.id, qty);
 }
 
 /// Pure, style-independent cart logic. Every state holder calls these.
@@ -77,6 +84,28 @@ class CartState {
   double get discount => coupon == 'SAVE10' ? subtotal * 0.1 : 0;
   double get total => subtotal - discount;
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is CartState &&
+        _sameLines(lines, other.lines) &&
+        coupon == other.coupon &&
+        couponError == other.couponError &&
+        checkoutStatus == other.checkoutStatus &&
+        orderId == other.orderId &&
+        checkoutError == other.checkoutError;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    Object.hashAll(lines),
+    coupon,
+    couponError,
+    checkoutStatus,
+    orderId,
+    checkoutError,
+  );
+
   CartState copyWith({
     List<CartLine>? lines,
     Object? coupon = _unset,
@@ -98,4 +127,13 @@ class CartState {
           : checkoutError as String?,
     );
   }
+}
+
+bool _sameLines(List<CartLine> a, List<CartLine> b) {
+  if (identical(a, b)) return true;
+  if (a.length != b.length) return false;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) return false;
+  }
+  return true;
 }

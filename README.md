@@ -1,29 +1,46 @@
-# Lab Notes
+Lab notes
 
-Why is CartLine immutable with copyWith instead of a mutable qty?
+Why is CartLine immutable?
+A line is a value. copyWith makes a new line and leaves the old one alone. If qty changed in place, old states, tests and widgets could change without anyone noticing. It also lets the state classes see a real change.
 
-A CartLine is a value. Changing it creates a new line, so old state stays old. If we mutate qty, every place sharing that line changes too, including tests and old states. copyWith changes just qty and leaves the rest. It also lets state libraries see that something changed.
+Which styles still work with mutation?
+setState still works because it always rebuilds. That's the trap. Riverpod, Cubit and Bloc compare old and new state. Mutating the same object can look like no change, so the screen stays stale.
 
-Which of the four styles would still work with mutation, and why is that a trap?
+Why does CartBody take callbacks?
+CartBody is just the UI. Data goes in, actions come out. All four versions can reuse it, and it can be tested without a provider or bloc wrapper.
 
-setState still works with mutation because setState always rebuilds. The trap is that this teaches you mutating is fine. Riverpod, Cubit, and Bloc compare old and new state. If you mutate the same object, they think nothing changed and do not update the screen. Then you get a stale UI with no error.
+Why not store total?
+Every add, remove, quantity change and coupon change would have to update it too. Miss one and the total is wrong. A getter recalculates, so it can't go stale.
 
-Why does CartBody take callbacks instead of importing a provider or a bloc?
+What happens without if (!mounted) return;?
+The page can be popped while checkout is waiting. setState or context after that throws. The check stops the code once the page is gone.
 
-CartBody only shows the cart. The page gives it lines and tells it what to do when a user adds or removes. So the same widget works for all four styles, and it is easy to test without provider wrappers. If it imported Riverpod or Bloc, it would be tied to one style.
+How would an order history page read the cart?
+It can't right now. The cart is private to SetStateCartPage. Lift it above both pages, or use an InheritedWidget. For past orders, a shared service is enough.
 
-Why would storing total be a bug waiting to happen?
+Where does _history live, and what happens on hot restart vs hot reload?
+It's in the page's State object. Hot reload keeps it. Hot restart clears it, and popping the page clears it too.
 
-The total is made from the lines and the coupon. If we store it, every add, remove, quantity change, and coupon change must also update it. Forget one place and the screen shows a wrong number. A getter always calculates from the current state, so it cannot go stale.
+Part 3 notes
 
-What happens without if (!mounted) return; after the await?
+Does copying the same coupon notify?
+No. I added == and hashCode to CartState (and CartLine), so the new state is equal when nothing changed. Riverpod sees no change, so listeners don't run.
 
-The page can be closed while checkout is running. Without the check, the code calls setState and uses context after the page is gone. That throws errors. The check stops the rest of the code when the page no longer exists.
+Where did I use ref.read?
+Page: ref.read(cartProvider.notifier) to get add, changeQty, applyCoupon, checkout and undo.
+Notifier: ref.read(checkoutApiProvider) inside checkout.
+Listener: ref.read(cartProvider) to get the order id or error text.
 
-After T4, how would a second page, like an order history page, read the cart? What would you have to change?
+Where did I use ref.watch?
+The cart view watches the lines, coupon and couponError.
+The summary card watches only the values it shows: item count, subtotal, discount, total and checkout status.
+The small canUndoProvider also watches cartProvider so the Undo button updates. It's autoDispose too, so it doesn't keep the cart alive.
 
-Right now the cart lives inside SetStateCartPage, so another page cannot see it. Move the cart state up to a shared owner above both pages, such as the app widget, and pass it and its callbacks down. Or put it in an InheritedWidget. If the second page only needs past orders, store those in a shared service instead.
+Why does the summary rebuild less?
+It's a separate ConsumerWidget. Typing in the coupon field doesn't touch provider state. An invalid Apply only changes couponError, which the summary doesn't watch. A quantity change changes the numbers, so it rebuilds. In setState the whole page rebuilds.
 
-After T5, where does _history live, and what happens to it on hot restart versus hot reload?
+Why no mounted check in Riverpod?
+The notifier is not a widget, and there is no BuildContext or setState after the await. Riverpod removes the page's listeners when the page closes, so the callback doesn't run on a dead widget.
 
-_history lives in the State object of SetStateCartPage, next to _state. Hot reload keeps the State object, so the history usually stays. Hot restart starts the app again, so the history is lost. It is also lost when the page is popped.
+What happens to history when the page is popped?
+cartProvider is autoDispose. When the page closes, its listeners go away and the provider is disposed. _history lives on CartNotifier, so it is destroyed too. Reopening starts fresh. In the tests I keep a listener open so the provider is not disposed mid-test.

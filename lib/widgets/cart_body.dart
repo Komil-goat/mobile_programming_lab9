@@ -5,18 +5,20 @@ import '../models/cart.dart';
 class CartBody extends StatefulWidget {
   const CartBody({
     super.key,
-    required this.state,
+    required this.lines,
+    this.coupon,
+    this.couponError,
     required this.onAdd,
     required this.onQtyChanged,
     required this.onApplyCoupon,
-    required this.onCheckout,
   });
 
-  final CartState state;
+  final List<CartLine> lines;
+  final String? coupon;
+  final String? couponError;
   final void Function(Product) onAdd;
   final void Function(String productId, int delta) onQtyChanged;
   final void Function(String code) onApplyCoupon;
-  final VoidCallback onCheckout;
 
   @override
   State<CartBody> createState() => _CartBodyState();
@@ -28,8 +30,12 @@ class _CartBodyState extends State<CartBody> {
   @override
   void didUpdateWidget(covariant CartBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.state.coupon != widget.state.coupon) {
-      _couponController.text = widget.state.coupon ?? '';
+    if (oldWidget.coupon != widget.coupon) {
+      if (widget.coupon != null) {
+        _couponController.text = widget.coupon!;
+      } else if (widget.couponError == null) {
+        _couponController.clear();
+      }
     }
   }
 
@@ -43,7 +49,6 @@ class _CartBodyState extends State<CartBody> {
 
   @override
   Widget build(BuildContext context) {
-    final state = widget.state;
     return Column(
       children: [
         Padding(
@@ -73,7 +78,7 @@ class _CartBodyState extends State<CartBody> {
                   controller: _couponController,
                   decoration: InputDecoration(
                     labelText: 'Coupon code',
-                    errorText: state.couponError,
+                    errorText: widget.couponError,
                     border: const OutlineInputBorder(),
                     isDense: true,
                   ),
@@ -86,11 +91,11 @@ class _CartBodyState extends State<CartBody> {
           ),
         ),
         Expanded(
-          child: state.lines.isEmpty
+          child: widget.lines.isEmpty
               ? const Center(child: Text('Cart is empty'))
               : ListView(
                   children: [
-                    for (final l in state.lines)
+                    for (final l in widget.lines)
                       ListTile(
                         key: ValueKey(l.product.id),
                         title: Text(l.product.name),
@@ -125,61 +130,7 @@ class _CartBodyState extends State<CartBody> {
                   ],
                 ),
         ),
-        Card(
-          margin: const EdgeInsets.all(12),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                _summaryRow('Items', '${state.itemCount}'),
-                _summaryRow('Subtotal', state.subtotal.toStringAsFixed(2)),
-                _summaryRow(
-                  'Discount',
-                  '-${state.discount.toStringAsFixed(2)}',
-                ),
-                const Divider(),
-                _summaryRow(
-                  'Total',
-                  state.total.toStringAsFixed(2),
-                  bold: true,
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  width: double.infinity,
-                  child: FilledButton(
-                    onPressed:
-                        state.lines.isEmpty ||
-                            state.checkoutStatus == CheckoutStatus.submitting
-                        ? null
-                        : widget.onCheckout,
-                    child: state.checkoutStatus == CheckoutStatus.submitting
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Checkout'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ],
-    );
-  }
-
-  Widget _summaryRow(String label, String value, {bool bold = false}) {
-    final style = bold ? const TextStyle(fontWeight: FontWeight.bold) : null;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: style),
-          Text(value, style: style),
-        ],
-      ),
     );
   }
 }

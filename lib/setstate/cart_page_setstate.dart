@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/cart.dart';
 import '../services/checkout_api.dart';
 import '../widgets/cart_body.dart';
+import '../widgets/cart_summary.dart';
 
 class SetStateCartPage extends StatefulWidget {
   const SetStateCartPage({super.key});
@@ -115,7 +116,7 @@ class _SetStateCartPageState extends State<SetStateCartPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SetStateCartPage'),
+        title: const Text('Cart · setState'),
         actions: [
           IconButton(
             tooltip: 'Undo',
@@ -124,12 +125,27 @@ class _SetStateCartPageState extends State<SetStateCartPage> {
           ),
         ],
       ),
-      body: CartBody(
-        state: _state,
-        onAdd: _add,
-        onQtyChanged: _changeQty,
-        onApplyCoupon: _applyCoupon,
-        onCheckout: _checkout,
+      body: Column(
+        children: [
+          Expanded(
+            child: CartBody(
+              lines: _state.lines,
+              coupon: _state.coupon,
+              couponError: _state.couponError,
+              onAdd: _add,
+              onQtyChanged: _changeQty,
+              onApplyCoupon: _applyCoupon,
+            ),
+          ),
+          CartSummaryCard(
+            itemCount: _state.itemCount,
+            subtotal: _state.subtotal,
+            discount: _state.discount,
+            total: _state.total,
+            checkoutStatus: _state.checkoutStatus,
+            onCheckout: _checkout,
+          ),
+        ],
       ),
     );
   }
