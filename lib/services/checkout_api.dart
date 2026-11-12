@@ -4,6 +4,7 @@ class CheckoutException implements Exception {
   @override
   String toString() => message;
 }
+
 class CheckoutApi {
   Future<String> submit(double total) async {
     await Future<void>.delayed(const Duration(milliseconds: 1500));
